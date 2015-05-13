@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#inputFile=$1
+#outputFile=$2
+#height=$3
+#width=$4
+
+convert $1 -resize $3x$4 $2
+echo $1 >> /var/log/foundryResize.log
