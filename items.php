@@ -6,7 +6,11 @@ class ItemServiceActions {
     const ItemCollection = 2;
     const ItemsByType = 3;
     const ItemsByFieldInfo = 4;
-    const NoAction = 4;
+    const NoAction = 5;
+    const Applications = 6;
+    const Templates = 7;
+    const TemplateFields = 8;
+    const UpdateItem = 9;
 }
 
 class ItemBase {
@@ -23,31 +27,6 @@ class ItemBase {
         $this->headers = apache_request_headers();
         $this->applicationId = $this->headers["Authorization"];
     }
-    
-    function getSimpleItemDictionary($id) {
-        $hash = 'Items:SimpleDictionary';
-        $cache = $this->redis->hget($hash, $id);
-        if (!$cache) {
-            $query = $query = "SELECT * FROM getitems WHERE item_id = $id AND application = '$this->applicationId'";
-            $sql = new sqlQuery($this->conn, $query);
-            $data = $sql->rows;
-            $dict = array();
-            $dict = general::array_push_assoc($dict, 'Id', $id);
-            //$dict = general::array_push_assoc($dict, 'uuid', $data[0]['uuid']);
-            $dict = general::array_push_assoc($dict, 'Name', $data[0]['item_name']);
-            $dict = general::array_push_assoc($dict, 'ItemTemplate', $data[0]['template_id']);
-            $dict = general::array_push_assoc($dict, 'Description', $data[0]['item_description']);
-            $dict = general::array_push_assoc($dict, 'CreatedDate', $data[0]['item_created_date']);
-            foreach ($data as $datum) {
-                $dict = general::array_push_assoc($dict, $datum['field_name'], $datum['data_value']);
-            }
-            $this->redis->hset($hash, $id, json_encode($dict));
-        } else {
-            $this->cache_count++;
-            $dict = json_decode($cache, true);
-        }
-        return $dict;
-    }
 }
 
 class ItemService extends ItemBase {
@@ -59,7 +38,7 @@ class ItemService extends ItemBase {
     function process(){
         header('Content-Type: application/json');
         header("Access-Control-Allow-Origin: *");
-        header("Access-Control-Allow-Headers: Authorization");
+        header("Access-Control-Allow-Headers: Authorization, Content-Type");
         $this->determineAction();
         switch($this->action){
             case ItemServiceActions::ItemById:
@@ -73,6 +52,18 @@ class ItemService extends ItemBase {
                 break;
             case ItemServiceActions::ItemsByFieldInfo:
                 $resp = $this->getItemsByFieldInfo();
+                break;
+            case ItemServiceActions::Applications:
+                $resp = $this->getApplications();
+                break;
+            case ItemServiceActions::Templates:
+                $resp = $this->getTemplates();
+                break;
+            case ItemServiceActions::TemplateFields:
+                $resp = $this->getTemplateFields();
+                break;
+            case ItemServiceActions::UpdateItem:
+                $resp = $this->UpdateItem();
                 break;
             default:
                 $resp = $this->noAction();
@@ -95,6 +86,18 @@ class ItemService extends ItemBase {
                 break;
             case "ItemsByFieldInfo":
                 $this->action = ItemServiceActions::ItemsByFieldInfo;
+                break;
+            case "Applications":
+                $this->action = ItemServiceActions::Applications;
+                break;
+            case "Templates":
+                $this->action = ItemServiceActions::Templates;
+                break;
+            case "TemplateFields":
+                $this->action = ItemServiceActions::TemplateFields;
+                break;
+            case "UpdateItem":
+                $this->action = ItemServiceActions::UpdateItem;
                 break;
             default:
                 $this->action = ItemServiceActions::NoAction;
@@ -121,6 +124,20 @@ class ItemService extends ItemBase {
         $sql = new sqlQuery($this->conn, $query);
         return json_encode(unserialize($sql->rows[0]["json"]), JSON_PRETTY_PRINT);
         //return $sql->rows[0]["json"];
+    }
+    
+    function UpdateItem(){
+        $postdata = file_get_contents("php://input");
+        $data = json_decode($postdata, true);
+        $item_id = $this->paramArr[1];
+        $query = "UPDATE item_data SET value = CASE id ";
+        $keys = array_keys($data);
+        foreach($keys as $key){
+            $query .= "WHEN $key THEN '$data[$key]' ";   
+        }
+        $query .= "END WHERE id IN (".implode(",", $keys).")";
+        $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
+        return json_encode($sql, JSON_PRETTY_PRINT);
     }
     
     function getItemsByType(){
@@ -171,6 +188,41 @@ class ItemService extends ItemBase {
         }
         return json_encode($items, JSON_PRETTY_PRINT);
     }
+    
+    function getApplications(){
+        $query = "SELECT * FROM application WHERE active = 1";
+        $sql = new sqlQuery($this->conn, $query);
+        $items = array();
+        foreach($sql->rows as $row){
+            array_push($items, $row);
+        }
+        return json_encode($items, JSON_PRETTY_PRINT);
+    }
+    
+    function getTemplates(){
+        if($this->paramArr[1] != 0){
+            $query = "SELECT * FROM item_templates WHERE id = ".$this->paramArr[1];
+        } else {
+            $query = "SELECT * FROM item_templates";
+        }
+        $sql = new sqlQuery($this->conn, $query);
+        $items = array();
+        foreach($sql->rows as $row){
+            array_push($items, $row);
+        }
+        return json_encode($items, JSON_PRETTY_PRINT);
+    }
+    
+    function getTemplateFields(){
+        $query = "SELECT * FROM getitems WHERE item_id = ".$this->paramArr[1];   
+        $sql = new sqlQuery($this->conn, $query);
+        $items = array();
+        foreach($sql->rows as $row){
+            array_push($items, $row);
+        }
+        return json_encode($items, JSON_PRETTY_PRINT);
+    }
+   
 }
 
 class Item {
@@ -629,7 +681,7 @@ class ItemManager {
         $template_name = $helper["template_name"];
         $application = $helper["application"];
         
-        if($is_master){
+        if(true /*$is_master*/){
             $app_query = "SELECT * FROM Application";
             $app_sql = $this->query($app_query);
             $select = htmlElement::select($app_sql->rows, "name", "uuid", "applicationId", "chosen", $application, $selected_name, $initial_option, $multiple);
@@ -752,7 +804,7 @@ class ItemManager {
         } else {
             $application = $_SESSION["ApplicationUUID"];
         }
-        $query = "UPDATE items SET name = '" . $_REQUEST["item_name"] . "', description = '" . $_REQUEST["item_description"] . "', date_last_update = " . time() . " WHERE id = " . $this->router->data;
+        $query = "UPDATE items SET application = '".$_REQUEST["applicationId"]."', name = '" . $_REQUEST["item_name"] . "', description = '" . $_REQUEST["item_description"] . "', date_last_update = " . time() . " WHERE id = " . $this->router->data;
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
         $item = $this->getItemById($this->router->data);
 
