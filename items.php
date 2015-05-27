@@ -224,7 +224,7 @@ class ItemService extends ItemBase {
         if($edit == true){
             $query = "SELECT * FROM getitems WHERE item_id = ".$this->paramArr[1];   
         } else {
-            $query = "SELECT * FROM gettemplatefields WHERE template_id = ".$this->paramArr[1];   
+            $query = "SELECT * FROM gettemplatefields WHERE template_id = ".$this->paramArr[1] ." AND active = 1";   
         }
         $sql = new sqlQuery($this->conn, $query);
         $items = array();
