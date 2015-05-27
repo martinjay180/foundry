@@ -143,15 +143,21 @@ class ItemService extends ItemBase {
     function getItemsByType(){
         //return json_encode($this, JSON_PRETTY_PRINT);
         $type_id = $this->paramArr[1];
-        $include_inactive = $this->paramArr[2];
-        $query = "SELECT json FROM items WHERE template_id = $type_id AND application = '$this->applicationId' ORDER BY sort_order";
+        $key = $this->paramArr[2];
+        $query = "SELECT id, json FROM items WHERE template_id = $type_id AND application = '$this->applicationId' ORDER BY sort_order";
         $sql = new sqlQuery($this->conn, $query);
         //return json_encode($sql, JSON_PRETTY_PRINT);
-        $items = array();
+        $keys = array();
+        $values = array();
         foreach($sql->rows as $row){
-            array_push($items, unserialize($row["json"]));
+            array_push($values, unserialize($row["json"]));
+            array_push($keys, $row[$key]);
         }
-        return json_encode($items, JSON_PRETTY_PRINT);
+        if(!string::IsNullOrEmptyString($key)){
+            return json_encode(array_combine($keys, $values), JSON_PRETTY_PRINT);
+        } else {
+            return json_encode($values, JSON_PRETTY_PRINT);
+        }
     }
     
     function getItemCollection(){  
@@ -214,7 +220,12 @@ class ItemService extends ItemBase {
     }
     
     function getTemplateFields(){
-        $query = "SELECT * FROM getitems WHERE item_id = ".$this->paramArr[1];   
+        $edit = $this->paramArr[2];
+        if($edit == true){
+            $query = "SELECT * FROM getitems WHERE item_id = ".$this->paramArr[1];   
+        } else {
+            $query = "SELECT * FROM gettemplatefields WHERE template_id = ".$this->paramArr[1];   
+        }
         $sql = new sqlQuery($this->conn, $query);
         $items = array();
         foreach($sql->rows as $row){
