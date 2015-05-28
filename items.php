@@ -11,6 +11,8 @@ class ItemServiceActions {
     const Templates = 7;
     const TemplateFields = 8;
     const UpdateItem = 9;
+    const InsertItem = 10;
+    const UpdateJson = 11;
 }
 
 class ItemBase {
@@ -26,6 +28,40 @@ class ItemBase {
         $this->paramArr = explode("/", $params);
         $this->headers = apache_request_headers();
         $this->applicationId = $this->headers["Authorization"];
+    }
+    
+    function getSimpleItemDictionary($id) {
+        $query = "SELECT * FROM getitems WHERE item_id = ".$id;
+        $sql = new sqlQuery($this->conn, $query);
+        $data = $sql->rows;
+        $dict = array();
+        $dict = general::array_push_assoc($dict, 'Id', $id);
+        $dict = general::array_push_assoc($dict, 'Name', $data[0]['item_name']);
+        $dict = general::array_push_assoc($dict, 'Application', $data[0]['application']);
+        $dict = general::array_push_assoc($dict, 'ItemTemplate', $data[0]['template_id']);
+        $dict = general::array_push_assoc($dict, 'Description', $data[0]['item_description']);
+        $dict = general::array_push_assoc($dict, 'CreatedDate', $data[0]['item_created_date']);
+        foreach ($data as $datum) {
+            $dict = general::array_push_assoc($dict, $datum['field_name'], ($datum['data_value']));
+        }
+        return $dict;
+    }
+    
+    function saveJson($id){
+        $json = $this->getSimpleItemDictionary($id);
+        //$json = htmlspecialchars(json_encode($json), ENT_QUOTES, 'UTF-8');
+        $json = serialize($json);
+        $query = "UPDATE items SET json = '$json' WHERE id = $id";
+        $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
+    }
+    
+    function updateJson(){
+        $sql = new sqlQuery($this->conn, 'SELECT id FROM items WHERE active = 1');
+        foreach($sql->rows as $row){
+            $id = $row["id"];
+            $this->saveJson($id);
+        }
+        return json_encode($sql);
     }
 }
 
@@ -65,6 +101,12 @@ class ItemService extends ItemBase {
             case ItemServiceActions::UpdateItem:
                 $resp = $this->UpdateItem();
                 break;
+            case ItemServiceActions::InsertItem:
+                $resp = $this->InsertItem();
+                break;
+            case ItemServiceActions::UpdateJson:
+                $resp = $this->updateJson();
+                break;
             default:
                 $resp = $this->noAction();
                 break;
@@ -98,6 +140,12 @@ class ItemService extends ItemBase {
                 break;
             case "UpdateItem":
                 $this->action = ItemServiceActions::UpdateItem;
+                break;
+            case "InsertItem":
+                $this->action = ItemServiceActions::InsertItem;
+                break;
+            case "UpdateJson":
+                $this->action = ItemServiceActions::UpdateJson;
                 break;
             default:
                 $this->action = ItemServiceActions::NoAction;
@@ -137,7 +185,27 @@ class ItemService extends ItemBase {
         }
         $query .= "END WHERE id IN (".implode(",", $keys).")";
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
+        $this->saveJson($item_id);
         return json_encode($sql, JSON_PRETTY_PRINT);
+    }
+    
+    function InsertItem(){
+        $postdata = file_get_contents("php://input");
+        $data = json_decode($postdata, true);
+        $template_id = $this->paramArr[1];
+        $query = "INSERT INTO items (application, template_id, uuid, name, description, date_created, active) VALUES ('".$this->applicationId."', '" . $template_id . "', '" . general::getUUID() . "','" . $data['Name'] . "','" . $data['Description'] . "','" . time() . "','1')";
+        $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeINSERT);
+        $item_id = $sql->response;
+        $fields = new sqlQuery($this->conn, "SELECT * FROM gettemplatefields WHERE template_id = " . $template_id);
+        foreach ($fields->rows as $field) {
+            $field_id = $field['field_id'];
+            if (array_key_exists($field_id, $data)) {
+                $value = sqlQuery::escape($data[$field_id]);
+                $query = "INSERT INTO item_data (item_id, item_field_id, value, active) VALUES ('$item_id','$field_id','$value','1')";
+                $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeINSERT);
+            }
+        }
+        $this->saveJson($item_id);
     }
     
     function getItemsByType(){
@@ -221,16 +289,18 @@ class ItemService extends ItemBase {
     
     function getTemplateFields(){
         $edit = $this->paramArr[2];
-        if($edit == true){
+        if($edit != "undefined"){
             $query = "SELECT * FROM getitems WHERE item_id = ".$this->paramArr[1];   
         } else {
-            $query = "SELECT * FROM gettemplatefields WHERE template_id = ".$this->paramArr[1] ." AND active = 1";   
+            $query = "SELECT * FROM gettemplatefields WHERE template_id = ".$this->paramArr[1];   
         }
         $sql = new sqlQuery($this->conn, $query);
         $items = array();
         foreach($sql->rows as $row){
             array_push($items, $row);
         }
+//        array_push($items, $sql);
+//        array_push($items, $this);
         return json_encode($items, JSON_PRETTY_PRINT);
     }
    
