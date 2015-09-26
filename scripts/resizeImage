@@ -5,5 +5,5 @@
 #height=$3
 #width=$4
 
-convert $1 -resize $3x$4 $2
+convert $1 -resize $3x$4 -interlace plane $2
 echo $1 >> /var/log/foundryResize.log
