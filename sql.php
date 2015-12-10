@@ -49,9 +49,11 @@ class sqlQuery {
                 $this->select();
                 break;
             case sqlQueryTypes::sqlQueryTypeUPDATE:
+                //$this->query = $this->escape($this->query);
                 $this->update();
                 break;
             case sqlQueryTypes::sqlQueryTypeINSERT:
+                //$this->query = $this->escape($this->query);
                 $this->insert();
                 break;
             case sqlQueryTypes::sqlQueryTypeDELETE:

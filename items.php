@@ -18,6 +18,9 @@ class ItemServiceActions {
     const UploadMedia = 14;
     const Media = 15;
     const UpdateMissingFields = 16;
+    const PublishAll = 17;
+    const ArchiveMedia = 18;
+    const UpdateMedia = 19;
 
 }
 
@@ -37,6 +40,14 @@ class ItemBase {
             $this->applicationId = $this->headers["Authorization"];
         }
     }
+    
+    function prepareJson($data){
+        return json_encode($this->unpackJson($data));
+    }
+    
+    function unpackJson($data){
+        return unserialize(base64_decode($data));
+    }
 
     function getSimpleItemDictionary($id) {
         $query = "select i.name as name, i.application as application, i.template_id as template_id, i.description as description, i.date_created as date_created, itf.name as col, itf.field_type_id as field_type, id.value as data from items i ";
@@ -50,7 +61,8 @@ class ItemBase {
         $dict = array();
         $dict = general::array_push_assoc($dict, 'Id', intval($id));
         $dict = general::array_push_assoc($dict, 'Name', $data[0]['name']);
-        $dict = general::array_push_assoc($dict, 'Description', $data[0]['description']);
+        //$dict = general::array_push_assoc($dict, 'Description', sqlQuery::escape($data[0]['description']));        
+        $dict = general::array_push_assoc($dict, 'Description', "test");
         $dict = general::array_push_assoc($dict, 'Application', $data[0]['application']);
         $dict = general::array_push_assoc($dict, 'ItemTemplate', $data[0]['template_id']);
         $dict = general::array_push_assoc($dict, 'Description', $data[0]['description']);
@@ -72,8 +84,8 @@ class ItemBase {
     function saveJson($id) {
         $json = $this->getSimpleItemDictionary($id);
         //return $json;
-        //$json = htmlspecialchars(json_encode($json), ENT_QUOTES, 'UTF-8');
-        $json = serialize($json);
+//        $json = htmlspecialchars(json_encode($json), ENT_QUOTES, 'UTF-8');
+        $json = base64_encode(serialize($json));
         $query = "UPDATE items SET json = '$json' WHERE id = " . $id;
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
         return $sql;
@@ -141,6 +153,9 @@ class ItemService extends ItemBase {
             case ItemServiceActions::Publish:
                 $resp = $this->publishCache();
                 break;
+            case ItemServiceActions::PublishAll:
+                $resp = $this->publishAllCache();
+                break;
             case ItemServiceActions::Archive:
                 $resp = $this->ArchiveItem();
                 break;
@@ -152,6 +167,12 @@ class ItemService extends ItemBase {
                 break;
             case ItemServiceActions::UpdateMissingFields:
                 $resp = $this->updateItemsMissingFields();
+                break;
+            case ItemServiceActions::ArchiveMedia:
+                $resp = $this->ArchiveMedia();
+                break;
+            case ItemServiceActions::UpdateMedia:
+                $resp = $this->UpdateMedia();
                 break;
             default:
                 $resp = $this->noAction();
@@ -196,6 +217,9 @@ class ItemService extends ItemBase {
                 case "Publish":
                     $this->action = ItemServiceActions::Publish;
                     break;
+                case "PublishAll":
+                    $this->action = ItemServiceActions::PublishAll;
+                    break;
                 case "Archive":
                     $this->action = ItemServiceActions::Archive;
                     break;
@@ -208,6 +232,12 @@ class ItemService extends ItemBase {
                 case "UpdateMissingFields":
                     $this->action = ItemServiceActions::UpdateMissingFields;
                     break;
+                case "ArchiveMedia":
+                    $this->action = ItemServiceActions::ArchiveMedia;
+                    break;
+                case "UpdateMedia":
+                    $this->action = ItemServiceActions::UpdateMedia;
+                    break;
                 default:
                     $this->action = ItemServiceActions::NoAction;
             }
@@ -219,28 +249,46 @@ class ItemService extends ItemBase {
     function UploadMedia() {
         return general::pretty($_FILES);
     }
+    
+    function publishAllCache(){
+        $query = "SELECT * FROM application WHERE active = 1";
+        $sql = new sqlQuery($this->conn, $query);
+        $response = array();
+        foreach($sql->rows as $app){
+            array_push($response, $this->publishCache($app["uuid"]));
+        }
+        return json_encode($response, JSON_PRETTY_PRINT);
+    }
 
-    function publishCache() {
+    function publishCache($applicationId = false) {
+        //allows for function to be called in publishAllCache()!
+        if(!$applicationId){
+            $applicationId = $this->applicationId;   
+        }
+        //create cache folder if needed
+        if (!file_exists('./cache')) {
+            mkdir('./cache', 0777, true);
+        }
         $query = "SELECT * FROM item_templates";
         $sql = new sqlQuery($this->conn, $query);
         $output = array();
         foreach ($sql->rows as $template) {
             $id = $template["id"];
-            $q = "SELECT id, json FROM items WHERE template_id = $id AND application = '$this->applicationId' AND active = 1 ORDER BY sort_order";
+            $q = "SELECT id, json FROM items WHERE template_id = $id AND application = '$applicationId' AND active = 1 ORDER BY sort_order";
             $s = new sqlQuery($this->conn, $q);
             $values = array();
             foreach ($s->rows as $row) {
-                array_push($values, unserialize($row["json"]));
+                array_push($values, $this->unpackJson($row["json"]));
             }
             //array_push($output, $id, $values);
             $output = general::array_push_assoc($output, $id, $values);
         }
-        $media_query = "SELECT * FROM media WHERE active = 1 AND application = '$this->applicationId'";
+        $media_query = "SELECT * FROM media WHERE active = 1 AND application = '$applicationId'";
         $media_sql = new sqlQuery($this->conn, $media_query);
 //        $file = "cache/" . $this->applicationId . ".js";
-        $file = "cache/" . $this->applicationId . ".js";
+        $file = "cache/" . $applicationId . ".js";
         file_put_contents($file, "var cache = " . json_encode($output) . "; var media = " . json_encode($media_sql->rows));
-        return json_encode($output, JSON_PRETTY_PRINT);
+        return json_encode($output, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
     function noAction() {
@@ -253,7 +301,7 @@ class ItemService extends ItemBase {
     }
 
     function GetMedia() {
-        $query = "SELECT * FROM media WHERE application = '$this->applicationId'";
+        $query = "SELECT * FROM media WHERE application = '$this->applicationId' AND selectable = 1";
         if(!string::IsNullOrEmptyString($this->paramArr[1])){
             $uuids = explode(",", $this->paramArr[1]);
             $mapped = array_map(function($a){ return "'".$a."'";}, $uuids);
@@ -261,24 +309,29 @@ class ItemService extends ItemBase {
             $query .= " AND uuid IN (".$in_clause.")";
         }
         $sql = new sqlQuery($this->conn, $query);
+        //return json_encode($sql, JSON_PRETTY_PRINT);
         return json_encode($sql->rows, JSON_PRETTY_PRINT);
     }
 
     function getItemById() {
         $id = $this->paramArr[1];
-        //return json_encode($this, JSON_PRETTY_PRINT);
-        //return json_encode($this->getSimpleItemDictionary($id), JSON_PRETTY_PRINT);
         $query = "SELECT json FROM items WHERE id = $id";
         $sql = new sqlQuery($this->conn, $query);
-        return json_encode(unserialize($sql->rows[0]["json"]), JSON_PRETTY_PRINT);
-        //return $sql->rows[0]["json"];
+        return $this->prepareJson($sql->rows[0]["json"]);
     }
 
     function ArchiveItem() {
         $id = $this->paramArr[1];
         $query = "UPDATE items SET active = 0 WHERE id = " . $id;
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
-        return json_encode($sql, JSON_PRETTY_PRINT);
+        return json_encode($sql, JSON_PRETTY_PRINT | JSON_HEX_APOS);
+    }
+    
+    function ArchiveMedia(){
+        $id = $this->paramArr[1];
+        $query = "UPDATE media SET active = 0 WHERE id = " . $id;
+        $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
+        return json_encode($sql, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
     function UpdateItem() {
@@ -286,13 +339,13 @@ class ItemService extends ItemBase {
         $data = json_decode($postdata, true);
         $item_id = $this->paramArr[1];
         $output = array();
-        $query = "UPDATE items SET Name = '" . $data["Name"] . "', Description = '" . $data["Description"] . "' WHERE id = " . $item_id;
+        $query = "UPDATE items SET Name = '" . sqlQuery::escape($data["Name"]) . "', Description = '" . sqlQuery::escape($data["Description"]) . "' WHERE id = " . $item_id;
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
         array_push($output, $sql);
         $query = "UPDATE item_data SET value = CASE id ";
         $keys = __::without(__::flatten(array_keys($data)), "Name", "Description");
         foreach ($keys as $key) {
-            $val = $data[$key];
+            $val = sqlQuery::escape($data[$key]);
             if (is_array($val)) {
                 $val = implode(",", $val);
             }
@@ -302,7 +355,19 @@ class ItemService extends ItemBase {
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
         array_push($output, $sql);
         $this->saveJson($item_id);
-        return json_encode($output, JSON_PRETTY_PRINT);
+        return json_encode($output, JSON_PRETTY_PRINT | JSON_HEX_APOS);
+    }
+    
+    function UpdateMedia() {
+        $postdata = file_get_contents("php://input");
+        $data = json_decode($postdata, true);
+        $media_id = $this->paramArr[1];
+        $output = array();
+        $active = $data["active"] ? "1" : "0";
+        $query = "UPDATE media SET seo_name = '".$data['seo_name']."', title = '".$data['title']."', description = '".$data['description']."', active = '".$active."' WHERE id = ".$media_id;
+        $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
+        array_push($output, $sql);
+        return json_encode($output, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
     function InsertItem() {
@@ -312,6 +377,7 @@ class ItemService extends ItemBase {
         $query = "INSERT INTO items (application, template_id, uuid, name, description, date_created, active) VALUES ";
         $query .= "('" . $this->applicationId . "', '" . $template_id . "', '" . general::getUUID() . "','" . $data['Name'] . "','" . $data['Description'] . "','" . time() . "','1')";
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeINSERT);
+        //return json_encode($sql, JSON_PRETTY_PRINT);
         $item_id = $sql->response;
         $fields = new sqlQuery($this->conn, "SELECT * FROM gettemplatefields WHERE template_id = " . $template_id);
         foreach ($fields->rows as $field) {
@@ -337,13 +403,13 @@ class ItemService extends ItemBase {
         $keys = array();
         $values = array();
         foreach ($sql->rows as $row) {
-            array_push($values, unserialize($row["json"]));
+            array_push($values, $this->unpackJson($row["json"]));
             array_push($keys, $row[$key]);
         }
         if (!string::IsNullOrEmptyString($key)) {
-            return json_encode(array_combine($keys, $values), JSON_PRETTY_PRINT);
+            return json_encode(array_combine($keys, $values), JSON_PRETTY_PRINT | JSON_HEX_APOS);
         } else {
-            return json_encode($values, JSON_PRETTY_PRINT);
+            return json_encode($values, JSON_PRETTY_PRINT | JSON_HEX_APOS);
         }
         return json_last_error();
     }
@@ -355,32 +421,22 @@ class ItemService extends ItemBase {
         //json_encode($sql, JSON_PRETTY_PRINT);
         $items = array();
         foreach ($sql->rows as $row) {
-            array_push($items, unserialize($row["json"]));
+            array_push($items, $this->unpackJson($row["json"]));
         }
         array_push($items, $sql);
-//        $wrapped_items = array_map(
-//            function ($el) {
-//                return "{\{$el}}";
-//            },
-//            $items
-//        );
-        //general::pretty($items);
-        //return implode(",", $items);
-        return json_encode($items, JSON_PRETTY_PRINT);
+        return json_encode($items, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
     function getItemsByFieldInfo() {
-        //return json_encode($this, JSON_PRETTY_PRINT);
         $filters = explode(",", $this->paramArr[1]);
         $where = implode(" AND ", $filters);
         $query = "SELECT DISTINCT(item_id), json FROM getitems WHERE application = '$this->applicationId' AND " . $where;
         $sql = new sqlQuery($this->conn, $query);
-        //return json_encode($sql, JSON_PRETTY_PRINT);
         $items = array();
         foreach ($sql->rows as $row) {
-            array_push($items, unserialize($row["json"]));
+            array_push($items, $this->unpackJson($row["json"]));
         }
-        return json_encode($items, JSON_PRETTY_PRINT);
+        return json_encode($items, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
     function getApplications() {
@@ -390,29 +446,47 @@ class ItemService extends ItemBase {
         foreach ($sql->rows as $row) {
             array_push($items, $row);
         }
-        return json_encode($items, JSON_PRETTY_PRINT);
+        return json_encode($items, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
     function getTemplates() {
         if ($this->paramArr[1] != 0) {
             $query = "SELECT * FROM item_templates WHERE id = " . $this->paramArr[1];
         } else {
-            $query = "SELECT * FROM item_templates";
+            $query = "SELECT * FROM item_templates WHERE 1 = 1";
         }
+        $query .= " AND uuid IN (SELECT template_uuid FROM template_applications WHERE application_uuid = '".$this->applicationId."')";
         $sql = new sqlQuery($this->conn, $query);
         $items = array();
         foreach ($sql->rows as $row) {
             array_push($items, $row);
         }
-        return json_encode($items, JSON_PRETTY_PRINT);
+        return json_encode($items, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
     function getTemplateFields() {
         $edit = $this->paramArr[2];
         if ($edit != "undefined") {
-            $query = "SELECT * FROM getitems WHERE item_id = " . $this->paramArr[1];
+            //$query = "SELECT * FROM getitems WHERE item_id = " . $this->paramArr[1];
+            $query = "select 
+                it.name as template_name,
+                itf.id as field_name,
+                itf.field_type_id,
+                itf.name as field_name,
+                itf.description as field_description,
+                itf.sort_order as sort_order,
+                itf.data as field_data,
+                itf.settings as field_settings,
+                id.id as data_id,
+                id.value as data_value
+                from item_templates it
+                left join item_template_fields itf ON itf.template_id = it.id
+                left join items i on it.id = i.template_id
+                left join item_data id on i.id = id.item_id AND id.item_field_id = itf.id
+                where itf.active = 1 AND i.id = ".$this->paramArr[1];
         } else {
-            $query = "SELECT * FROM gettemplatefields WHERE template_id = " . $this->paramArr[1];
+            //$query = "SELECT * FROM gettemplatefields WHERE template_id = " . $this->paramArr[1];
+            $query = "select it.name as template_name, itf.id as field_name, itf.field_type_id, itf.name as field_name, itf.description as field_description, itf.sort_order as sort_order from item_template_fields itf left join item_templates it ON itf.template_id = it.id where itf.active = 1 AND it.id = ".$this->paramArr[1];
         }
         $sql = new sqlQuery($this->conn, $query);
         $items = array();
@@ -421,7 +495,7 @@ class ItemService extends ItemBase {
         }
 //        array_push($items, $sql);
 //        array_push($items, $this);
-        return json_encode($items, JSON_PRETTY_PRINT);
+        return json_encode($items, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
     
     function updateItemsMissingFields(){
@@ -452,7 +526,7 @@ class ItemService extends ItemBase {
                 }
             }
         }
-        return json_encode($output, JSON_PRETTY_PRINT);
+        return json_encode($output, JSON_PRETTY_PRINT | JSON_HEX_APOS);
     }
 
 }
