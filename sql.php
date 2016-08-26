@@ -125,7 +125,7 @@ class sqlQuery {
             $this->response = true;
         }
         $mysqli->close();
-        print_r("Inserted");
+        //print_r("Inserted");
     }
     
     function escape($str){
