@@ -33,6 +33,10 @@ class ts {
     function getTodayEndTS(){
         return ts::getTSForEndOfDay(time());
     }
+    
+    static function getTSFromApacheDate($apacheDate){
+        return strtotime(Strings::RemoveCharacters(array("[","]"), $apacheDate));
+    }
 }
 
 class SecondsIn {

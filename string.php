@@ -15,7 +15,18 @@ class stringBuilder {
 
 }
 
-class string {
+class Strings {
+    
+    function RemoveCharacters($characters, $text){
+        foreach ($characters as $char) {
+            $pos = 0;
+            while ($pos = strpos($text, $char, $pos)) {
+                $positions[$char][] = $pos;
+                $pos += strlen($char);
+            }
+        }
+        return str_replace($characters, '', $text);
+    }
 
     function Format($data, $pattern) {
         preg_match_all("/{{(.*)}}/U", $pattern, $matches, PREG_SET_ORDER);

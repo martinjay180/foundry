@@ -18,6 +18,7 @@ include 'items.php';
 include 'buynan.php';
 include 'encrypt.php';
 include 'underscore.php';
+include 'Parsedown.php';
 
 if( !function_exists('apache_request_headers') ) {
 

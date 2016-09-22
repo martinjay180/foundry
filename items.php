@@ -31,12 +31,16 @@ class ItemBase {
     function __construct($conn) {
         $this->conn = $conn;
         $this->mem = new Memcached();
-        $this->mem->addServer("127.0.0.1", 11211);
         $this->params = $_REQUEST["params"];
         $this->paramArr = explode("/", $this->params);
         if (function_exists("apache_request_headers")) {
             $this->headers = apache_request_headers();
             $this->applicationId = $this->headers["Authorization"];
+        }
+        if($this->applicationId){
+            $this->mem->addServer($this->applicationId, 11211);
+        } else {
+            $this->mem->addServer("127.0.0.1", 11211);
         }
     }
     
@@ -83,10 +87,19 @@ class ItemBase {
     }
     
     function getItemJsonById($id){
+        //error_log("GETITEMJSONBYID ::: " .$id);
+        $cache = $this->mem->get("ITEMBYID:".$id);
+        if($cache){
+            error_log("GETTING ITEM FROM CACHE :::" . $id);
+            return $cache;
+        } else {
         $query = "SELECT json FROM items WHERE id = $id";
         $sql = new sqlQuery($this->conn, $query);
         //return $sql;
-        return $this->unpackJson($sql->rows[0]["json"]);
+        $json = $this->unpackJson($sql->rows[0]["json"]);
+        $this->mem->set("ITEMBYID:".$id, $json);
+        return $json;
+        }
     }
 
     function saveJson($id) {
