@@ -37,6 +37,10 @@ class ts {
     static function getTSFromApacheDate($apacheDate){
         return strtotime(Strings::RemoveCharacters(array("[","]"), $apacheDate));
     }
+    
+    static function NonNullTS($date){
+        return $date == "" ? time() : strtotime($date);
+    }
 }
 
 class SecondsIn {
