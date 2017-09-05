@@ -20,6 +20,7 @@ include 'encrypt.php';
 include 'underscore.php';
 include 'Parsedown.php';
 include 'jwt.php';
+include 'regex.php';
 
 if( !function_exists('apache_request_headers') ) {
 
