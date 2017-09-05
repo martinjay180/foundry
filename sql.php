@@ -21,12 +21,14 @@ class sqlConnection {
     var $database;
     var $username;
     var $password;
+    var $port;
     
-    function __construct($server, $database, $username, $password){
+    function __construct($server, $database, $username, $password, $port = "3306"){
         $this->server = $server;
         $this->database = $database;
         $this->username = $username;
         $this->password = $password;
+        $this->port = $port;
     }
 }
 
