@@ -1,8 +1,12 @@
 <?php
 
+require_once '../vendor/autoload.php';
+//Predis\Autoloader::register();
+
+use \Firebase\JWT\JWT;
+
 class ItemServiceActions {
 
-    
     const ItemCollection = 2;
     const ItemsByFieldInfo = 4;
     const NoAction = 5;
@@ -17,35 +21,100 @@ class ItemServiceActions {
     const UploadMedia = 14;
     const UpdateMissingFields = 16;
     const PublishAll = 17;
+
 }
 
 class ItemBase {
 
     public $conn;
+    public $selectConn;
     public $redis;
     public $applicationId;
+    public $jwt;
     public $headers;
     public $mem;
     public $params;
 
     function __construct($conn) {
-        $this->conn = $conn;
+        if (is_array($conn)) {
+            $this->conn = $conn[0];
+            $this->selectConn = $conn[1];
+        } else {
+            $this->conn = $conn;
+            $this->selectConn = $conn;
+        }
+        //$this->redis = new Predis\Client();
         $this->mem = new Memcached();
-        $this->mem->addServer("127.0.0.1", 11211);
         $this->params = $_REQUEST["params"];
         $this->paramArr = explode("/", $this->params);
         if (function_exists("apache_request_headers")) {
             $this->headers = apache_request_headers();
             $this->applicationId = $this->headers["Authorization"];
+            $this->jwt = $this->headers["jwt"];
         }
+        $this->mem->addServer("127.0.0.1", 11211);
     }
-    
-    function prepareJson($data){
+
+    function getItemById($id) {
+        //check the cache first
+        //$item = $this->redis->get("item:$id");
+        if (!$item) {
+            error_log("ITEM NOT IN CACHE ::: LOOKING UP FROM DB ::: " . $id);
+            $query = "SELECT json FROM items WHERE id = $id";
+            $sql = new sqlQuery($this->conn, $query);
+            $json = $sql->rows[0]["json"];
+            //now put it in the cache for next time
+            $item = $this->prepareJson($json);
+            //$this->redis->set("item:$id", $item);
+        }
+        return json_decode($item);
+    }
+
+    function getExpandedItemById($id) {
+        //$item = $this->redis->get("expandeditem:$id");
+        //if (!$item) {
+            $query = "
+            select 
+            fk.json as fk_json, i.json as item_json, id.item_field_id, itf.name
+            from item_data id 
+            left join item_template_fields itf on id.item_field_id = itf.id
+            left join items fk on itf.field_type_id = 4 and id.value = fk.id
+            left join items i on id.item_id = i.id
+            where id.item_id = $id and itf.field_type_id = 4
+            UNION
+            select 
+            '' as fk_json, i.json as item_json, '' as item_field_id, '' as name
+            from items i where i.id = $id";
+            $sql = new sqlQuery($this->conn, $query);
+            $item = $this->unpackJson($sql->rows[0]["item_json"]);
+            foreach ($sql->rows as $row) {
+                $fk_json = $row["fk_json"];
+                if($fk_json){
+                    $fk_item = $this->unpackJson($fk_json);
+                    $field_name = str_replace(' ', '_', $row['name']);
+                    $item[$field_name] = $fk_item;
+                }
+            }
+            //$json = json_encode($item);
+            //$this->redis->set("expandeditem:$id", $json);
+         //   return $item;
+        //}
+        //return json_decode($item);
+            return $item;
+    }
+
+    function prepareJson($data) {
         return json_encode($this->unpackJson($data));
     }
-    
-    function unpackJson($data){
+
+    function unpackJson($data) {
         return unserialize(base64_decode($data));
+    }
+
+    function getUser($id) {
+        $query = "SELECT * from users WHERE id = $id";
+        $sql = new sqlQuery($this->conn, $query);
+        return $sql->rows[0];
     }
 
     function getSimpleItemDictionary($id) {
@@ -55,9 +124,14 @@ class ItemBase {
         $query .= "left join item_template_fields itf on id.item_field_id = itf.id ";
         $query .= "where i.id = " . $id;
         $sql = new sqlQuery($this->conn, $query);
+        $dict = array();
         //return $query;
         $data = $sql->rows;
-        $dict = array();
+
+        if (true || $data["inherits_user"] == 1) {
+            $dict = general::array_push_assoc($dict, 'User', $this->getUser($data[0]["value"]));
+        }
+
         $dict = general::array_push_assoc($dict, 'Id', intval($id));
         $dict = general::array_push_assoc($dict, 'Name', $data[0]['name']);
         //$dict = general::array_push_assoc($dict, 'Description', sqlQuery::escape($data[0]['description']));        
@@ -69,7 +143,7 @@ class ItemBase {
         $dict = general::array_push_assoc($dict, 'Description', $data[0]['description']);
         $dict = general::array_push_assoc($dict, 'CreatedDate', $data[0]['date_created']);
         foreach ($data as $datum) {
-            switch($datum["field_type"]){
+            switch ($datum["field_type"]) {
                 case 1:
                     $val = boolval($datum['data']);
                     break;
@@ -81,19 +155,28 @@ class ItemBase {
         }
         return $dict;
     }
-    
-    function getItemJsonById($id){
-        $query = "SELECT json FROM items WHERE id = $id";
-        $sql = new sqlQuery($this->conn, $query);
-        //return $sql;
-        return $this->unpackJson($sql->rows[0]["json"]);
+
+    function getItemJsonById($id) {
+        //error_log("GETITEMJSONBYID ::: " .$id);
+        $cache = $this->mem->get("ITEMBYID:" . $id);
+        if ($cache) {
+            error_log("GETTING ITEM FROM CACHE :::" . $id);
+            return $cache;
+        } else {
+            $query = "SELECT json FROM items WHERE id = $id";
+            $sql = new sqlQuery($this->conn, $query);
+            //return $sql;
+            $json = $this->unpackJson($sql->rows[0]["json"]);
+            $this->mem->set("ITEMBYID:" . $id, $json);
+            return $json;
+        }
     }
 
     function saveJson($id) {
         $json = $this->getSimpleItemDictionary($id);
-        $this->mem->set("ITEMBYID:".$id, $this->unpackJson($json));
-        //return $json;
-//        $json = htmlspecialchars(json_encode($json), ENT_QUOTES, 'UTF-8');
+        $item = json_encode($json);
+        //$this->redis->set("item:$id", $item);
+        //$this->redis->del("expandeditem:$id");
         $json = base64_encode(serialize($json));
         $query = "UPDATE items SET json = '$json' WHERE id = " . $id;
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
@@ -101,15 +184,15 @@ class ItemBase {
     }
 
     function updateJson($output = false) {
-        if ($this->applicationId == null) {
-            $this->applicationId = $argv[1];
-        }
+//        if ($this->applicationId == null) {
+//            $this->applicationId = $argv[1];
+//        }
         $sql = new sqlQuery($this->conn, "SELECT id FROM items WHERE active = 1 AND application = '" . $this->applicationId . "' ORDER BY id");
         $output = array();
         foreach ($sql->rows as $row) {
             array_push($output, $this->saveJson($row['id']));
         }
-        return json_encode($output);
+        return json_encode($sql);
     }
 
 }
@@ -121,36 +204,105 @@ class ItemService extends ItemBase {
     public $paramArr = array();
     public $routes = array();
     public $headers = array();
-    
-    function addRoute($route, $function){
-        $this->routes[$route] = $function;
+    public $start_ts;
+    public $resp = array();
+    public $validUser;
+    public $jwt;
+    public $key;
+    public $errors = array();
+    public $data;
+
+    function __construct($conn, $key) {
+        parent::__construct($conn);
+        $this->resp;
+        $this->key = $key;
+        $this->validUser = false;
+        //$this->addToResp("server", $_SERVER);
+        $this->addToResp("request", $_REQUEST);
+        if (function_exists("apache_request_headers")) {
+            $this->headers = apache_request_headers();
+            $this->addToResp("headers", $this->headers);
+            if (array_key_exists("jwt", $this->headers)) {
+                //$this->validateJWT();
+            }
+        }
     }
-    
-    function addHeader($header){
+
+    function decodeJWT() {
+        try {
+            $this->jwt = JWT::decode($this->headers["jwt"], $this->key, array('HS256'));
+        } catch (Exception $e) {
+            $this->addErrorResp($e->getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    function validateJWT() {
+        $this->validUser = false;
+        if ($this->decodeJWT()) {
+            if ($this->jwt->ra == $_SERVER['REMOTE_ADDR']) {
+                $this->validUser = true;
+            }
+        }
+    }
+
+    function addRoute($route, $function) {
+        $this->routes = array_merge($this->routes, [$route => $function]);
+    }
+
+    function addHeader($header) {
         array_push($this->headers, $header);
     }
-    
-    function outputHeaders(){
-        foreach($this->headers as $header){
+
+    function outputHeaders() {
+        foreach ($this->headers as $header) {
             header($header);
         }
     }
-    
-    function mapRoute(){
+
+    function response($resp) {
+        echo $resp;
+    }
+
+    function route() {
+        header('Content-Type: application/json');
+        $this->outputHeaders();
+        $this->mapRoute();
+        $this->addToResp("errors", $this->errors);
+        $this->addToResp("data", $this->data);
+        error_log(json_encode($this->data));
+        //$this->addToResp("service", $this);
+        //echo json_encode($this->data);
+        echo json_encode($this->resp, JSON_PRETTY_PRINT);
+    }
+
+    function addToResp($k, $v) {
+        $this->resp = array_merge($this->resp, [$k => $v]);
+    }
+
+    function addErrorResp($error) {
+        array_push($this->errors, $error);
+    }
+
+    function addDataResp($data) {
+        $this->data = $data;
+    }
+
+    function mapRoute() {
         $keys = array_keys($this->routes);
         $params = $_REQUEST["params"];
         $matchFound = false;
-        foreach($keys as $pattern){
-            $matches = preg_grep('#^'.$pattern.'$#', array($params));
-            if(sizeof($matches) > 0){
+        foreach ($keys as $pattern) {
+            $matches = preg_grep('#^' . $pattern . '$#', array($params));
+            if (sizeof($matches) > 0) {
                 $route = $this->routes[$pattern];
-                $this->outputHeaders();
                 $matchFound = true;
                 call_user_func($this->routes[$pattern], $this);
                 break;
             }
         }
-        if(!$matchFound){
+        if (!$matchFound) {
             call_user_func($this->routes["notFound"], $this);
         }
     }

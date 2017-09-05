@@ -21,6 +21,10 @@ class numbers {
         }
         return $p;
     }
+    
+    static function nonNull($num, $fallback){
+        return is_numeric($num) ? $num : $fallback;
+    }
 }
 
 ?>

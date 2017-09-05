@@ -37,6 +37,9 @@ class sqlQuery {
     var $sqlConnection;
     var $numRows;
     var $response;
+    var $error;
+    var $error_list;
+    var $error_code;
     //var $debug = true;
     //var $debug = false;
 
@@ -60,9 +63,9 @@ class sqlQuery {
                 $this->delete();
                 break;
         }
-//        if($GLOBALS["debug"]){
-//            general::pretty($this);
-//        }
+        if($GLOBALS["debug"]){
+            //error_log("SQL class instantiated ::: " . $query);
+        }
     }
 
     function select(){
@@ -95,6 +98,7 @@ class sqlQuery {
         if ($result = $mysqli->query($this->query)) {
             $this->response = true;
         }
+        $this->error_list = $mysqli->error_list;
         //$result->close();
         $mysqli->close();
         
@@ -110,6 +114,9 @@ class sqlQuery {
         if ($result = $mysqli->query($this->query)) {
             $this->response = $mysqli->insert_id;
         }
+        $this->error = $mysqli->error;
+        $this->error_code = $mysqli->errno;
+        $this->error_list = $mysqli->error_list;
         //$result->free();
         $mysqli->close();
     }
@@ -132,6 +139,26 @@ class sqlQuery {
         $search=array("\\","\0","\n","\r","\x1a","'",'"');
         $replace=array("\\\\","\\0","\\n","\\r","\Z","\'",'\"');
         return str_replace($search,$replace,$str);
+    }
+    
+    function buildValueArray($data, $except){
+        $arr = array();
+        foreach ($data as $col => $val) {
+            if($col != $except){
+                array_push($arr, "$col = '$val'");
+            }
+        }
+        return $arr;
+    }
+    
+    function buildValueString($arr){
+        return implode(",", $arr);
+    }
+    
+    function buildValues($data, $except){
+        $arr = sqlQuery::buildValueArray($data, $except);
+        $str = sqlQuery::buildValueString($arr);
+        return $str;
     }
     
 };
