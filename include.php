@@ -18,6 +18,7 @@ include 'items.php';
 include 'buynan.php';
 include 'encrypt.php';
 include 'underscore.php';
+include 'itemQuery.php';
 include 'Parsedown.php';
 include 'jwt.php';
 include 'regex.php';
