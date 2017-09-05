@@ -69,6 +69,7 @@ class ItemBase {
         }
         return json_decode($item);
     }
+    
 
     function getExpandedItemById($id) {
         //$item = $this->redis->get("expandeditem:$id");
@@ -122,10 +123,9 @@ class ItemBase {
         $query .= "left join item_data id  on i.id = id.item_id ";
         $query .= "left join item_templates it on i.template_id = it.id ";
         $query .= "left join item_template_fields itf on id.item_field_id = itf.id ";
-        $query .= "where i.id = " . $id;
+        $query .= "where i.active = 1 AND i.id = " . $id;
         $sql = new sqlQuery($this->conn, $query);
         $dict = array();
-        //return $query;
         $data = $sql->rows;
 
         if (true || $data["inherits_user"] == 1) {
@@ -157,15 +157,12 @@ class ItemBase {
     }
 
     function getItemJsonById($id) {
-        //error_log("GETITEMJSONBYID ::: " .$id);
-        $cache = $this->mem->get("ITEMBYID:" . $id);
         if ($cache) {
             error_log("GETTING ITEM FROM CACHE :::" . $id);
             return $cache;
         } else {
             $query = "SELECT json FROM items WHERE id = $id";
             $sql = new sqlQuery($this->conn, $query);
-            //return $sql;
             $json = $this->unpackJson($sql->rows[0]["json"]);
             $this->mem->set("ITEMBYID:" . $id, $json);
             return $json;
@@ -173,14 +170,11 @@ class ItemBase {
     }
 
     function saveJson($id) {
-        $json = $this->getSimpleItemDictionary($id);
-        $item = json_encode($json);
-        //$this->redis->set("item:$id", $item);
-        //$this->redis->del("expandeditem:$id");
-        $json = base64_encode(serialize($json));
+        $dict = $this->getSimpleItemDictionary($id);
+        $json = base64_encode(serialize($dict));
         $query = "UPDATE items SET json = '$json' WHERE id = " . $id;
         $sql = new sqlQuery($this->conn, $query, sqlQueryTypes::sqlQueryTypeUPDATE);
-        return $sql;
+        return $dict;
     }
 
     function updateJson($output = false) {
