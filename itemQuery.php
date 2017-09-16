@@ -12,6 +12,7 @@ class QueryComparitors {
     const StartsWith = 1;
     const Contains = 2;
     const EndsWith = 3;
+    const In = 4;
 };
 
 class QueryWhere {
@@ -39,6 +40,11 @@ class QueryWhere {
       case QueryComparitors::EndsWith:
         $q = "$this->key LIKE '%$this->val'";
         break;
+      case QueryComparitors::In:
+        //if array then join else assume it is already joined
+        $val = is_array($this->val) : join(",", $this->val) ? $this->val;
+        $q = "$this->key IN ($val)";
+        break;
     }
     return $q;
   }
@@ -55,10 +61,10 @@ class BaseQuery {
   public $limitArr = array();
   public $orderArr = array();
   public $setArr = array();
+  public $defaultsArr = array();
 
-  function __construct($conn, $table, $application = null) {
+  function __construct($conn, $table) {
     $this->table = $table;
-    $this->application = $application;
     $this->conn = $conn;
     $this->debug = $debug;
   }
@@ -71,16 +77,9 @@ class BaseQuery {
   function Active($active = true){
     return $this->Where("active", $active ? 1 : 0);
   }
-  function ByType($typeId){
-    return $this->Where("template_id", $typeId);
-  }
 
   function ById($id){
     return $this->Where("id", $id);
-  }
-
-  function ByApplication($applicationId){
-    return $this->Where("application", $applicationId);
   }
 
   // Query Operations
@@ -118,15 +117,27 @@ class BaseQuery {
 
   //Build Operations
   function Build($operation = QueryOperations::Select){
-    if($this->application != null){
-      $this->ByApplication($this->application);
-    }
     switch($operation){
       case QueryOperations::Select:
         $query = "SELECT * FROM ".$this->table;
         break;
       case QueryOperations::Update:
         $query = "UPDATE ".$this->table;
+        break;
+      case QueryOperations::Insert:
+        //merge the set array with the defaultsArr
+        $this->setArr = array_merge($this->defaultsArr, $this->setArr);
+        $query = "INSERT INTO ".$this->table;
+        $query .= " (".join(', ', array_map(function($o) {
+          return $o;
+        }, array_keys($this->setArr)));
+        $query .=") VALUES (";
+        $query .= join(', ', array_map(function($o) {
+          return "'".$o."'";
+        }, $this->setArr));
+        $query .= ")";
+        $this->query = $query;
+        return $query;
         break;
     }
     $query .= $this->BuildSet();
@@ -185,13 +196,25 @@ class BaseQuery {
 
     //UPDATE Operations
     function Set($key, $value){
-      array_push($this->setArr, [$key, $value]);
+      $this->setArr[$key] = $value;
       return $this;
     }
 
     function Update(){
       $this->Build(QueryOperations::Update);
       return $this->Run(QueryOperations::Update)->response;
+    }
+
+    //INSERT Operations
+    function Insert(){
+      $this->Defaults($this->defaultsArr);
+      general::pretty($this->defaultsArr);
+      $this->Build(QueryOperations::Insert);
+      return $this->Run(QueryOperations::Insert)->response;
+    }
+
+    function Defaults(){
+      return 0;
     }
 
   };

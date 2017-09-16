@@ -69,21 +69,21 @@ class ItemBase {
         }
         return json_decode($item);
     }
-    
+
 
     function getExpandedItemById($id) {
         //$item = $this->redis->get("expandeditem:$id");
         //if (!$item) {
             $query = "
-            select 
+            select
             fk.json as fk_json, i.json as item_json, id.item_field_id, itf.name
-            from item_data id 
+            from item_data id
             left join item_template_fields itf on id.item_field_id = itf.id
             left join items fk on itf.field_type_id = 4 and id.value = fk.id
             left join items i on id.item_id = i.id
             where id.item_id = $id and itf.field_type_id = 4
             UNION
-            select 
+            select
             '' as fk_json, i.json as item_json, '' as item_field_id, '' as name
             from items i where i.id = $id";
             $sql = new sqlQuery($this->conn, $query);
@@ -134,7 +134,7 @@ class ItemBase {
 
         $dict = general::array_push_assoc($dict, 'Id', intval($id));
         $dict = general::array_push_assoc($dict, 'Name', $data[0]['name']);
-        //$dict = general::array_push_assoc($dict, 'Description', sqlQuery::escape($data[0]['description']));        
+        //$dict = general::array_push_assoc($dict, 'Description', sqlQuery::escape($data[0]['description']));
         $dict = general::array_push_assoc($dict, 'Description', $data[0]['description']);
         $dict = general::array_push_assoc($dict, 'Value', $data[0]['value']);
         $dict = general::array_push_assoc($dict, 'DateValue', $data[0]['date_value']);
@@ -205,6 +205,7 @@ class ItemService extends ItemBase {
     public $key;
     public $errors = array();
     public $data;
+    public $providers = array();
 
     function __construct($conn, $key) {
         parent::__construct($conn);
@@ -243,6 +244,10 @@ class ItemService extends ItemBase {
 
     function addRoute($route, $function) {
         $this->routes = array_merge($this->routes, [$route => $function]);
+    }
+
+    function addProvider($key, $value){
+      $this->providers[$key] = $value;
     }
 
     function addHeader($header) {
