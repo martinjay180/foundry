@@ -247,6 +247,9 @@ class ItemService extends ItemBase {
     }
 
     function addProvider($key, $value){
+      if(!$this->providers){
+          $this->providers = array();
+      }
       $this->providers[$key] = $value;
     }
 

@@ -42,7 +42,7 @@ class QueryWhere {
         break;
       case QueryComparitors::In:
         //if array then join else assume it is already joined
-        $val = is_array($this->val) : join(",", $this->val) ? $this->val;
+        $val = is_array($this->val) ? join(",", $this->val) : $this->val;
         $q = "$this->key IN ($val)";
         break;
     }
