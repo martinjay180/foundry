@@ -114,12 +114,16 @@ class BaseQuery {
     $this->Build();
     return $this->Run()->rows;
   }
+  
+  function Columns(){
+      return "*";
+  }
 
   //Build Operations
   function Build($operation = QueryOperations::Select){
     switch($operation){
       case QueryOperations::Select:
-        $query = "SELECT * FROM ".$this->table;
+        $query = "SELECT ".$this->Columns()." FROM ".$this->table;
         break;
       case QueryOperations::Update:
         $query = "UPDATE ".$this->table;
