@@ -56,7 +56,6 @@ class BaseQuery {
   private $query;
   private $debug;
   private $table;
-  private $application;
   public $whereArr = array();
   public $limitArr = array();
   public $orderArr = array();
@@ -66,7 +65,6 @@ class BaseQuery {
   function __construct($conn, $table) {
     $this->table = $table;
     $this->conn = $conn;
-    $this->debug = $debug;
   }
 
   function Debug($debug){
@@ -86,6 +84,12 @@ class BaseQuery {
   function Where($key, $val, $comp = QueryComparitors::Equals){
     array_push($this->whereArr, new QueryWhere($key, $val, $comp));
     return $this;
+  }
+  
+  function DynamicWhere($col, $key, $val, $comp = QueryComparitors::Equals){
+      $dynamic_comp = "COLUMN_GET($col, '$key' AS CHAR)";
+      $this->Where($dynamic_comp, $val, $comp);
+      return $this;
   }
 
   function OrderBy($key, $asc = true){
@@ -181,6 +185,10 @@ class BaseQuery {
       }
       return $query;
     }
+    
+    function Query(){
+        return $this->query;
+    }
 
     function Run($queryType = QueryOperations::Select){
       $sql = new sqlQuery($this->conn, $this->query, $queryType);
@@ -206,7 +214,7 @@ class BaseQuery {
 
     function Update(){
       $this->Build(QueryOperations::Update);
-      return $this->Run(QueryOperations::Update)->response;
+      return $this->Run(QueryOperations::Update);
     }
 
     //INSERT Operations
@@ -217,7 +225,7 @@ class BaseQuery {
       return $this->Run(QueryOperations::Insert)->response;
     }
 
-    function Defaults(){
+    function Defaults($Defaults){
       return 0;
     }
 
