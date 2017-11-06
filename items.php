@@ -108,7 +108,7 @@ class ItemBase {
         return json_encode($this->unpackJson($data));
     }
 
-    function unpackJson($data) {
+    static function unpackJson($data) {
         return unserialize(base64_decode($data));
     }
 
@@ -157,6 +157,7 @@ class ItemBase {
     }
 
     function getItemJsonById($id) {
+        $cache = false;
         if ($cache) {
             error_log("GETTING ITEM FROM CACHE :::" . $id);
             return $cache;

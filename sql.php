@@ -65,9 +65,9 @@ class sqlQuery {
                 $this->delete();
                 break;
         }
-        if($GLOBALS["debug"]){
+        //if($GLOBALS["debug"]){
             //error_log("SQL class instantiated ::: " . $query);
-        }
+        //}
     }
 
     function select(){

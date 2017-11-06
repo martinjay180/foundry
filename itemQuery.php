@@ -167,6 +167,7 @@ class BaseQuery {
     }
 
     function BuildSet(){
+      $query = "";
       if(sizeof($this->setArr)){
         $query .= " SET ";
           $query .= join(' , ', array_map(function($s) {
