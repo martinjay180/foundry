@@ -1,9 +1,9 @@
 <?php
 
-require_once '../vendor/autoload.php';
+//require_once '../vendor/autoload.php';
 //Predis\Autoloader::register();
 
-use \Firebase\JWT\JWT;
+//use \Firebase\JWT\JWT;
 
 class ItemServiceActions {
 

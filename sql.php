@@ -3,12 +3,12 @@
 //include_once 'general.php';
 
 class sqlQueryTypes {
-    
+
     const sqlQueryTypeSELECT = 0;
     const sqlQueryTypeUPDATE = 1;
     const sqlQueryTypeINSERT = 2;
     const sqlQueryTypeDELETE = 3;
-    
+
 };
 
 class sqlQueryWhereComparators {
@@ -16,13 +16,13 @@ class sqlQueryWhereComparators {
 }
 
 class sqlConnection {
-    
+
     var $server;
     var $database;
     var $username;
     var $password;
     var $port;
-    
+
     function __construct($server, $database, $username, $password, $port = "3306"){
         $this->server = $server;
         $this->database = $database;
@@ -33,7 +33,7 @@ class sqlConnection {
 }
 
 class sqlQuery {
-    
+
     var $query;
     var $rows = array();
     var $sqlConnection;
@@ -89,7 +89,7 @@ class sqlQuery {
         }
         $mysqli->close();
     }
-    
+
     function update(){
         $mysqli = new mysqli($this->sqlConnection->server, $this->sqlConnection->username, $this->sqlConnection->password, $this->sqlConnection->database);
         $mysqli->set_charset('utf8');
@@ -103,9 +103,9 @@ class sqlQuery {
         $this->error_list = $mysqli->error_list;
         //$result->close();
         $mysqli->close();
-        
+
     }
-    
+
     function insert(){
         $mysqli = new mysqli($this->sqlConnection->server, $this->sqlConnection->username, $this->sqlConnection->password, $this->sqlConnection->database);
         $mysqli->set_charset('utf8');
@@ -122,7 +122,7 @@ class sqlQuery {
         //$result->free();
         $mysqli->close();
     }
-    
+
     function delete(){
         $mysqli = new mysqli($this->sqlConnection->server, $this->sqlConnection->username, $this->sqlConnection->password, $this->sqlConnection->database);
         $mysqli->set_charset('utf8');
@@ -136,13 +136,13 @@ class sqlQuery {
         $mysqli->close();
         //print_r("Inserted");
     }
-    
+
     function escape($str){
         $search=array("\\","\0","\n","\r","\x1a","'",'"');
         $replace=array("\\\\","\\0","\\n","\\r","\Z","\'",'\"');
         return str_replace($search,$replace,$str);
     }
-    
+
     function buildValueArray($data, $except){
         $arr = array();
         foreach ($data as $col => $val) {
@@ -152,21 +152,21 @@ class sqlQuery {
         }
         return $arr;
     }
-    
+
     function buildValueString($arr){
         return implode(",", $arr);
     }
-    
+
     function buildValues($data, $except){
         $arr = sqlQuery::buildValueArray($data, $except);
         $str = sqlQuery::buildValueString($arr);
         return $str;
     }
-    
+
 };
 
 class sqlQueryBuilder {
-    
+
     var $columns = array();
     var $query_type;
     var $table;
@@ -174,14 +174,14 @@ class sqlQueryBuilder {
     var $order = array();
     public $limit_start = 0;
     public $limit_length = 0;
-    
+
     var $query;
-    
+
     function __construct($table, $query_type = sqlQueryTypes::sqlQueryTypeSELECT){
         $this->query_type = $query_type;
         $this->table = $table;
     }
-    
+
     function where($col, $cond, $comp = sqlQueryWhereComparators::EQUALS){
         switch($comp){
             case sqlQueryWhereComparators::EQUALS:
@@ -189,15 +189,15 @@ class sqlQueryBuilder {
         }
         array_push($this->where, $where_item);
     }
-    
+
     function column($col){
         array_push($this->columns, $col);
     }
-    
+
     function order($col){
         array_push(($this->order), $col);
     }
-    
+
     function render(){
         $query = "SELECT ";
         //COLUMNS
@@ -226,9 +226,9 @@ class sqlQueryBuilder {
         }
         return $query;
     }
-    
-    
-    
+
+
+
 }
 
 ?>
