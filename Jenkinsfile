@@ -1,9 +1,9 @@
 pipeline {
   agent any
   stages {
-    stage('') {
+    stage('error') {
       steps {
-        mail(subject: 'Foundy Pipeline', body: 'This is a test', to: 'martinjay180@gmail.com')
+        echo 'This is a test'
       }
     }
   }
