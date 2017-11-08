@@ -10,10 +10,11 @@
             "constants": []
         },
         "/Projects/sandbox-old/foundry/src/String.php": {
-            "fileSize": 2588,
-            "lastModified": 1509986516,
+            "fileSize": 2637,
+            "lastModified": 1510164631,
             "classes": [
                 "stringBuilder",
+                "String",
                 "Strings"
             ],
             "functions": [],

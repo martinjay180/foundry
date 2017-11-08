@@ -15,8 +15,26 @@ class stringBuilder {
 
 }
 
+class String {
+  static function Format($pattern, $data, $options = false){
+    $delimiter = array("{", "}");
+    preg_match_all("/".$delimiter[0]."(.*)".$delimiter[1]."/U", $pattern, $matches, PREG_SET_ORDER);
+    if (sizeof($matches) > 0) {
+        foreach ($matches as $key=>$match) {
+          $match_key = $match[1];
+          $match_value = $match_key == "" ? $data[$key] : $data[$match_key];
+          $limit = $match_key == "" ? 1 : -1;
+          $pattern = preg_replace("/" .$delimiter[0] . $match_key . "\\".$delimiter[1]."/", $match_value, $pattern, $limit);
+        }
+    } else {
+        $pattern = $data[$pattern];
+    }
+    return $pattern;
+  }
+}
+
 class Strings {
-    
+
     function RemoveCharacters($characters, $text){
         foreach ($characters as $char) {
             $pos = 0;
@@ -30,7 +48,7 @@ class Strings {
 
     function Format($data, $pattern) {
         preg_match_all("/{{(.*)}}/U", $pattern, $matches, PREG_SET_ORDER);
-        //general::pretty($matches);
+        general::pretty($matches);
         if (sizeof($matches) > 0) {
             foreach ($matches as $match) {
                 $pattern = preg_replace("/{{" . $match[1] . "\}}/", $data[$match[1]], $pattern);
@@ -83,7 +101,7 @@ class Strings {
             return $str . $text;
         }
     }
-    
+
     /**
     * @param $value
     * @return mixed

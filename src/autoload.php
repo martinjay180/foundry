@@ -15,6 +15,7 @@
   'QueryOperations' => 'itemQuery.php',
   'QueryWhere' => 'itemQuery.php',
   'SecondsIn' => 'datetime.php',
+  'String' => 'String.php',
   'Strings' => 'String.php',
   'bootstrap' => 'bootstrap.php',
   'buynan' => 'buynan.php',
