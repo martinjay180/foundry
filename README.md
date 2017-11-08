@@ -1,2 +1,1 @@
-This is a test.
-Testing the submoule thing
+A collection of classes/utilites for speeding up php development
