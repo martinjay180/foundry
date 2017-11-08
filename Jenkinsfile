@@ -7,5 +7,10 @@ pipeline {
         sh 'composer install'
       }
     }
+    stage('Test') {
+      steps {
+        sh './vendor/bin/phpunit --bootstrap src/autoload.php tests'
+      }
+    }
   }
 }
