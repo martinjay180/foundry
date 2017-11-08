@@ -1,9 +1,10 @@
 pipeline {
   agent any
   stages {
-    stage('error') {
+    stage('Print Message') {
       steps {
         echo 'This is a test'
+        sh 'composer install'
       }
     }
   }
