@@ -3,11 +3,8 @@ pipeline {
   stages {
     stage('') {
       steps {
-        sh './phpunit.sh'
+        mail(subject: 'Foundy Pipeline', body: 'This is a test', to: 'martinjay180@gmail.com')
       }
     }
-  }
-  environment {
-    test = 'test'
   }
 }
