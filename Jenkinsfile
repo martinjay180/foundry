@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('') {
       steps {
-        sh '/.deploy.sh'
+        sh './phpunit.sh'
       }
     }
   }

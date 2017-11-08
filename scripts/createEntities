@@ -1,4 +1,0 @@
-#!/bin/bash
-
-curl http://localhost/Projects/Sandbox/foundry/entityCreator.php > /var/tmp/entityCreator.php;
-/usr/local/bin/ksdiff /var/tmp/entityCreator.php /Projects/Sandbox/myosites/appEntities.php

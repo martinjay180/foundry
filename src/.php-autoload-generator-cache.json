@@ -1,0 +1,217 @@
+{
+    "files": {
+        "/Projects/sandbox-old/foundry/src/Parsedown.php": {
+            "fileSize": 37614,
+            "lastModified": 1504645122,
+            "classes": [
+                "Parsedown"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/String.php": {
+            "fileSize": 2588,
+            "lastModified": 1509986516,
+            "classes": [
+                "stringBuilder",
+                "Strings"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/bootstrap.php": {
+            "fileSize": 3566,
+            "lastModified": 1443273452,
+            "classes": [
+                "bootstrap",
+                "media_item",
+                "carousel_item"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/buynan.php": {
+            "fileSize": 1405,
+            "lastModified": 1504645100,
+            "classes": [
+                "buynan"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/cache.php": {
+            "fileSize": 524,
+            "lastModified": 1443273452,
+            "classes": [
+                "cache"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/datetime.php": {
+            "fileSize": 1193,
+            "lastModified": 1504645122,
+            "classes": [
+                "ts",
+                "SecondsIn"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/encrypt.php": {
+            "fileSize": 883,
+            "lastModified": 1504645107,
+            "classes": [
+                "Crypt"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/entities.php": {
+            "fileSize": 41741,
+            "lastModified": 1443273452,
+            "classes": [
+                "entityColTypes",
+                "entityColSettings",
+                "entityColFormats",
+                "entityTableSettings",
+                "entityOperations",
+                "entityRouterModes",
+                "entityNavigation",
+                "entityRouter",
+                "entities"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/filesystem.php": {
+            "fileSize": 298,
+            "lastModified": 1443273452,
+            "classes": [
+                "filesystem"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/general.php": {
+            "fileSize": 4781,
+            "lastModified": 1443273452,
+            "classes": [
+                "general"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/html.php": {
+            "fileSize": 8772,
+            "lastModified": 1443273452,
+            "classes": [
+                "htmlAttr",
+                "htmlElement"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/itemQuery.php": {
+            "fileSize": 5561,
+            "lastModified": 1509986518,
+            "classes": [
+                "QueryOperations",
+                "QueryComparitors",
+                "QueryWhere",
+                "BaseQuery"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/items.php": {
+            "fileSize": 10420,
+            "lastModified": 1509986518,
+            "classes": [
+                "ItemServiceActions",
+                "ItemBase",
+                "ItemService"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/jwt.php": {
+            "fileSize": 5248,
+            "lastModified": 1504645122,
+            "classes": [
+                "JWT"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/navigation.php": {
+            "fileSize": 1790,
+            "lastModified": 1443273452,
+            "classes": [
+                "navigation",
+                "navNode"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/numbers.php": {
+            "fileSize": 567,
+            "lastModified": 1504645122,
+            "classes": [
+                "numbers"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/regex.php": {
+            "fileSize": 183,
+            "lastModified": 1504703907,
+            "classes": [
+                "regex"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/sitemap.php": {
+            "fileSize": 1194,
+            "lastModified": 1510030020,
+            "classes": [
+                "sitemap"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/sql.php": {
+            "fileSize": 6562,
+            "lastModified": 1510000112,
+            "classes": [
+                "sqlQueryTypes",
+                "sqlQueryWhereComparators",
+                "sqlConnection",
+                "sqlQuery",
+                "sqlQueryBuilder"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/table.php": {
+            "fileSize": 3810,
+            "lastModified": 1443273452,
+            "classes": [
+                "table"
+            ],
+            "functions": [],
+            "constants": []
+        },
+        "/Projects/sandbox-old/foundry/src/xmlsitemap.php": {
+            "fileSize": 2828,
+            "lastModified": 1443273452,
+            "classes": [
+                "xmlsitemap",
+                "rssfeed"
+            ],
+            "functions": [],
+            "constants": []
+        }
+    }
+}

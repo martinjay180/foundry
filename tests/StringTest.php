@@ -16,6 +16,7 @@ final class StringTest extends TestCase
     $this->assertEquals(
           'truncate',
           Strings::Truncate("truncate test", 8, false)
+          
       );
   }
 }

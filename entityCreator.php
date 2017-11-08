@@ -1,4 +1,4 @@
-<?php
+<!-- <?php
 
 include("include.php");
 
@@ -14,7 +14,7 @@ function getTables(){
 function getColumns($table){
    $query = "SHOW FULL COLUMNS FROM $table";
    $sql = new sqlQuery($GLOBALS["conn"], $query);
-   return $sql->rows; 
+   return $sql->rows;
 }
 
 function getFK($table, $col){
@@ -51,20 +51,20 @@ foreach($tables as $row){
         $comment = $col["Comment"];
         if($comment == "disp"){
             $table_disp_col = $field;
-        } 
+        }
         echo "\tpublic \$".$field.";\n";
     }
     if($table_disp_col == null){
         $table_disp_col = $table_id_col;
     }
-    
+
     echo "\n\tfunction getColumnArray(){";
     foreach($cols as $col){
         $field = $col["Field"];
         echo "\n\t\tarray_push(\$this->cols,\"".$field."\");";
     }
     echo "\n\t}\n";
-    
+
     echo "\n\tfunction getSettings(){";
     echo "\n\t\t\$this->conn = \$GLOBALS[\"conn\"];";
     echo "\n\t\t\$this->table_name = \"$table\";";
@@ -75,33 +75,33 @@ foreach($tables as $row){
     echo "\n\t\t\$this->sort_col = \"sort_order\";";
     echo "\n\t}\n";
     echo "};\n\n";
-    
+
     echo "\$$table = new $table();\n\n";
-    
+
     foreach($cols as $col){
         $field = $col["Field"];
         $key = $col["Key"];
         if($key == "MUL"){
             $fk_setting = getFK($table, $field);
-            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ShowInList, true);\n"; 
-            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_Type, entityColTypes::ForeignKey);\n"; 
-            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ForeignKeyCol, \"".$fk_setting."\");\n"; 
+            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ShowInList, true);\n";
+            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_Type, entityColTypes::ForeignKey);\n";
+            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ForeignKeyCol, \"".$fk_setting."\");\n";
         } elseif($field == "active"){
-            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ShowInList, false);\n"; 
-            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_Type, entityColTypes::Bool);\n"; 
+            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ShowInList, false);\n";
+            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_Type, entityColTypes::Bool);\n";
         } else {
-            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ShowInList, true);\n"; 
+            echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_ShowInList, true);\n";
         }
         $disp_name = ucwords(str_replace("_", " ", $field));
         echo "\$".$table."->addColSetting(\"$field\", entityColSettings::entSet_DisplayName, \"$disp_name\");\n";
     }
-    
+
     echo "\n\$".$table."->addTableSetting(entityTableSettings::entSet_SortBy, \$".$table."->sort_col);";
-    
+
     echo "\n\$entities = general::array_push_assoc(\$entities, \"$table\", \$$table);\n\n";
 }
 
 echo "?>";
 
 ?>
-
+ -->

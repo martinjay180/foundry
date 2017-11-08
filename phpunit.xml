@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<phpunit bootstrap="src/autoload.php" colors="false">
+  <testsuites>
+    <testsuite name="foundry">
+      <directory>./tests</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
+
