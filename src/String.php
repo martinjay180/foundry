@@ -15,7 +15,8 @@ class stringBuilder {
 
 }
 
-class String {
+class Strings {
+
   static function Format($pattern, $data, $options = false){
     $delimiter = array("{", "}");
     preg_match_all("/".$delimiter[0]."(.*)".$delimiter[1]."/U", $pattern, $matches, PREG_SET_ORDER);
@@ -31,9 +32,6 @@ class String {
     }
     return $pattern;
   }
-}
-
-class Strings {
 
     function RemoveCharacters($characters, $text){
         foreach ($characters as $char) {
@@ -46,18 +44,18 @@ class Strings {
         return str_replace($characters, '', $text);
     }
 
-    function Format($data, $pattern) {
-        preg_match_all("/{{(.*)}}/U", $pattern, $matches, PREG_SET_ORDER);
-        general::pretty($matches);
-        if (sizeof($matches) > 0) {
-            foreach ($matches as $match) {
-                $pattern = preg_replace("/{{" . $match[1] . "\}}/", $data[$match[1]], $pattern);
-            }
-        } else {
-            $pattern = $data[$pattern];
-        }
-        return $pattern;
-    }
+    // function Format($data, $pattern) {
+    //     preg_match_all("/{{(.*)}}/U", $pattern, $matches, PREG_SET_ORDER);
+    //     general::pretty($matches);
+    //     if (sizeof($matches) > 0) {
+    //         foreach ($matches as $match) {
+    //             $pattern = preg_replace("/{{" . $match[1] . "\}}/", $data[$match[1]], $pattern);
+    //         }
+    //     } else {
+    //         $pattern = $data[$pattern];
+    //     }
+    //     return $pattern;
+    // }
 
     function IsJson($str) {
         json_decode($string);

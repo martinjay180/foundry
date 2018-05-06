@@ -15,6 +15,29 @@ class QueryComparitors {
     const In = 4;
 };
 
+class QueryJoin {
+  private $table;
+  private $alias;
+  private $key1;
+  private $key2;
+
+  function __construct($table, $alias, $key1, $key2){
+    $this->table = $table;
+    $this->alias = $alias;
+    $this->key1 = $key1;
+    $this->key2 = $key2;
+  }
+
+  function Build(){
+    return Strings::Format(" JOIN {table} {alias} ON {key1} = {key2}", array(
+      "table" => $this->table,
+      "alias" => $this->alias,
+      "key1"  => $this->key1,
+      "key2"  => $this->key2
+    ));
+  }
+}
+
 class QueryWhere {
   private $key;
   private $val;
@@ -85,7 +108,7 @@ class BaseQuery {
     array_push($this->whereArr, new QueryWhere($key, $val, $comp));
     return $this;
   }
-  
+
   function DynamicWhere($col, $key, $val, $comp = QueryComparitors::Equals){
       $dynamic_comp = "COLUMN_GET($col, '$key' AS CHAR)";
       $this->Where($dynamic_comp, $val, $comp);
@@ -118,7 +141,7 @@ class BaseQuery {
     $this->Build();
     return $this->Run()->rows;
   }
-  
+
   function Columns(){
       return "*";
   }
@@ -186,7 +209,7 @@ class BaseQuery {
       }
       return $query;
     }
-    
+
     function Query(){
         return $this->query;
     }

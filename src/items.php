@@ -44,7 +44,7 @@ class ItemBase {
             $this->selectConn = $conn;
         }
         //$this->redis = new Predis\Client();
-        $this->mem = new Memcached();
+        //$this->mem = new Memcached();
         $this->params = $_REQUEST["params"];
         $this->paramArr = explode("/", $this->params);
         if (function_exists("apache_request_headers")) {
@@ -52,7 +52,7 @@ class ItemBase {
             $this->applicationId = $this->headers["Authorization"];
             $this->jwt = $this->headers["jwt"];
         }
-        $this->mem->addServer("127.0.0.1", 11211);
+        //$this->mem->addServer("127.0.0.1", 11211);
     }
 
     function getItemById($id) {
@@ -165,7 +165,7 @@ class ItemBase {
             $query = "SELECT json FROM items WHERE id = $id";
             $sql = new sqlQuery($this->conn, $query);
             $json = $this->unpackJson($sql->rows[0]["json"]);
-            $this->mem->set("ITEMBYID:" . $id, $json);
+            //$this->mem->set("ITEMBYID:" . $id, $json);
             return $json;
         }
     }
