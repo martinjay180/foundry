@@ -53,5 +53,12 @@ final class sqlProviderTest extends TestCase
     $results = $provider->Select()->Join("products", "p", "p.id", "t.product_id")->Where("t.type", array(3,4,6,5), QueryComparitors::In)->Results($returnQuery);
     $this->assertEquals($query, $returnQuery);
   }
+
+  public function testUpdate(){
+    $provider = $this->getProvider();
+    $query = "update test set a = '1', b = '2' WHERE id = '5'";
+    $results = $provider->Update()->Set("a",1)->Set("b",2)->Where("id",5)->Save($returnQuery);
+    $this->assertEquals($query, $returnQuery);
+  }
 }
 ?>

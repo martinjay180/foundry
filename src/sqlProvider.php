@@ -23,8 +23,18 @@ class sqlProvider {
     return $this;
   }
 
+  function Update(){
+    $this->queryType = QueryOperations::Update;
+    return $this;
+  }
+
   function Col($col){
     $this->cols[] = $col;
+    return $this;
+  }
+
+  function Set($key, $val){
+    $this->cols[$key] = sqlQuery::escape($val);
     return $this;
   }
 
@@ -49,10 +59,20 @@ class sqlProvider {
     return $sql->rows;
   }
 
+  function Save(&$returnQueryTo = null){
+    $this->GenerateQuery();
+    $returnQueryTo = $this->query;
+    $sql = new sqlQuery($this->conn, $this->query, sqlQueryTypes::sqlQueryTypeUPDATE);
+    return $sql;
+  }
+
   function GenerateQuery(){
     switch($this->queryType){
       case QueryOperations::Select:
         $this->query = $this->GenerateSelectQuery();
+        break;
+      case QueryOperations::Update:
+        $this->query = $this->GenerateUpdateQuery();
         break;
     }
   }
@@ -67,6 +87,14 @@ class sqlProvider {
     ));
   }
 
+  function GenerateUpdateQuery(){
+    return Strings::Format("update {table} {set} {where}", array(
+      "table"=>$this->GetTableName(),
+      "set"=>$this->GetSet(),
+      "where"=>$this->GetWhere()
+    ));
+  }
+
   function GetTableName(){
     return trim("$this->table $this->alias");
   }
@@ -77,6 +105,13 @@ class sqlProvider {
     } else {
       return "*";
     }
+  }
+
+  function GetSet(){
+    $set = sizeof($this->cols > 0) ? "set " : "";
+    return $set.implode(', ', array_map(function($value, $key) {
+      return $key." = '".$value."'";
+    }, array_values($this->cols), array_keys($this->cols)));
   }
 
   function GetLimit(){
