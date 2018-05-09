@@ -18,12 +18,21 @@ class sqlProvider {
     $this->table = $table;
   }
 
+  function CleanUp(){
+      $this->cols = array();
+      $this->joins = array();
+      $this->where = array();
+      $this->alias = null;
+      $this->limit = null;
+      $this->offset = null;
+  }
+
   function Select(){
     $this->queryType = QueryOperations::Select;
     return $this;
   }
 
-  function Update(){
+  function Update($object = false){
     $this->queryType = QueryOperations::Update;
     return $this;
   }
@@ -75,6 +84,8 @@ class sqlProvider {
         $this->query = $this->GenerateUpdateQuery();
         break;
     }
+    //the query has been generated, let's clean up.
+    $this->CleanUp();
   }
 
   function GenerateSelectQuery(){
