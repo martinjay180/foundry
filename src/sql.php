@@ -72,24 +72,27 @@ class sqlQuery {
 
     function select(){
       if($this->sqlConnection){
-        $mysqli = new mysqli($this->sqlConnection->server, $this->sqlConnection->username, $this->sqlConnection->password, $this->sqlConnection->database);
-        $mysqli->set_charset('utf8');
+        $mysql = new mysqli($this->sqlConnection->server, $this->sqlConnection->username, $this->sqlConnection->password, $this->sqlConnection->database);
+        $mysql->set_charset('utf8');
         if (mysqli_connect_errno()) {
-            printf("Connect failed: %s\n", mysqli_connect_error());
-            exit();
+        	die(printf('MySQL Server connection failed: %s', mysqli_connect_error()));
         }
-//        echo($this->query);
-        if ($result = $mysqli->query($this->query)) {
-            $this->response = true;
-            $i = 0;
-            while($row = $result->fetch_assoc()){
-                $this->rows[] = $row;
-                $i++;
-            }
-            $this->numRows = $i;
+        $results = array();
+        if ($mysql->multi_query($this->query)) {
+        	do {
+        		$records = array();
+        		if ($result = $mysql->use_result()) {
+        			while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+        				$records[] = $row;
+        			}
+        			$result->close();
+        		}
+        		$results[] = $records;
+        	} while ($mysql->next_result());
         }
-        $mysqli->close();
+        $mysql->close();
       }
+      $this->rows = sizeof($results) > 1 ? $results : $results[0];
     }
 
     function update(){

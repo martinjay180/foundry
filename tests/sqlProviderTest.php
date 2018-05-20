@@ -60,5 +60,12 @@ final class sqlProviderTest extends TestCase
     $results = $provider->Update()->Set("a",1)->Set("b",2)->Where("id",5)->Save($returnQuery);
     $this->assertEquals($query, $returnQuery);
   }
+
+  public function testUpdateMultiple(){
+    $provider = $this->getProvider();
+    $query = "update test set a = '1', b = '2' WHERE id = '5'";
+    $results = $provider->Update()->Set("a",1)->Set("b",2)->Where("id",5)->Save($returnQuery);
+    $this->assertEquals($query, $returnQuery);
+  }
 }
 ?>
