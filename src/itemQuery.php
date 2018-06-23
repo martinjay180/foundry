@@ -13,6 +13,7 @@ class QueryComparitors {
     const Contains = 2;
     const EndsWith = 3;
     const In = 4;
+    const NotEquals = 5;
 };
 
 class QueryJoin {
@@ -67,6 +68,9 @@ class QueryWhere {
         //if array then join else assume it is already joined
         $val = is_array($this->val) ? join(",", $this->val) : $this->val;
         $q = "$this->key IN ('$val')";
+        break;
+      case QueryComparitors::NotEquals:
+        $q = "$this->key != '$this->val'";
         break;
     }
     return $q;
