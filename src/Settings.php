@@ -10,9 +10,9 @@ class Settings {
 
     var $data;
 
-    public function Setup()
+    public function Setup($src = "settings.yaml")
     {
-        $yaml = Yaml::parse(file_get_contents('settings.yaml'));
+        $yaml = Yaml::parse(file_get_contents($src));
         $this->data = $yaml;
     }
 
