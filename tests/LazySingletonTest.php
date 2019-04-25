@@ -5,7 +5,8 @@ use PHPUnit\Framework\TestCase;
 use PHLAK\Config\Config;
 use Foundry\LazySingleton;
 
-class LLO_a extends LazySingleton {
+class LLO_a {
+    use LazySingleton;
 
     var $ts;
 
@@ -14,18 +15,15 @@ class LLO_a extends LazySingleton {
     }
 }
 
-class LLO_b extends LazySingleton {
-
+class LLO_b {
+    use LazySingleton;
+    function Setup(){
+        echo "override";
+    }
 }
 
 final class LazySingletonTest extends TestCase
 {
-    // Tests that the base class instantiates and returns an instance of the object.
-    public function testLazyLoad()
-    {
-        $inst = LazySingleton::Instance();
-        $this->assertInstanceOf(LazySingleton::class, $inst);
-    }
 
     // Tests that successive calls to Instance() return only one instance of the object by comparing the timestamp
     public function testOneLoad(){
